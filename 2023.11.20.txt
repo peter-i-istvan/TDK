@@ -1,0 +1,28 @@
+Google keresések:
+	- human brain connectivity ready for modelling
+	- human brain connectivity matrices
+
+* Human brain structural connectivity matrices–ready for modelling
+	[ ] 88 subjects
+	[ ] 90 regions: AAL atlas
+	[ ] Article:	https://www.nature.com/articles/s41597-022-01596-9
+		Beszél arról, hogy mikor jó egy SC mátrix
+		Egy másik cikkben (https://ieeexplore.ieee.org/document/10249302) erre gold standard-ként hivatkoznak
+	[ ] Data	https://osf.io/yw5vf/
+	
+	Állítás: ha ezen jól tanul, akkor az architektúra valid
+	
+	Tanítások: pl thresholdinggal
+	
+OSF-en kerestem további adatseteket:
+	(Nem igazán voltak)
+
+	
+Adatelemzés:
+	- DHCP: egyes channelek külön milyen tanítást produkálnak	.
+	
+Ötletek:
+	- dimenzionalitás problémájának kikerülése autoencoder reprezentációkkal (majd MLP tanítás ezeken)
+	
+TODO:
+	- baseline tanítások mindkét dataseten leírva
