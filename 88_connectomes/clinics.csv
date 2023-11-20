@@ -1,0 +1,89 @@
+subject;gender;age (years);right-handed;education;weight (kg);height (m);BMI
+1;female;24.8;1;bachelor's degree or higher;58;1.7;20.07
+2;female;27.7;1;bachelor's degree or higher;57;1.65;20.94
+3;female;34.2;1;bachelor's degree or higher;54;1.56;22.19
+4;female;29;1;bachelor's degree or higher;58;1.65;21.3
+5;male;31.9;1;bachelor's degree or higher;66;1.79;20.6
+6;female;27.9;1;bachelor's degree or higher;55;1.68;19.49
+7;male;48.7;1;bachelor's degree or higher;67;1.76;21.63
+8;male;37.7;0;elementary school;62;1.85;18.12
+9;male;34.4;1;high-school;75;1.83;22.4
+10;male;33.3;1;bachelor's degree or higher;84;1.83;25.08
+11;male;32.6;0;bachelor's degree or higher;75;1.76;24.21
+12;female;34.4;1;bachelor's degree or higher;58;1.59;22.94
+13;female;29.2;1;bachelor's degree or higher;63;1.68;22.32
+14;male;26.9;1;bachelor's degree or higher;64;1.7;22.15
+15;female;37;1;bachelor's degree or higher;61;1.61;23.53
+16;female;26.6;1;bachelor's degree or higher;52;1.65;19.1
+17;male;31.1;1;bachelor's degree or higher;105;1.93;28.19
+18;male;30.6;1;high-school;62;1.73;20.72
+19;male;38.1;1;N/A;71;1.74;23.45
+20;female;41.5;1;bachelor's degree or higher;66;1.62;25.15
+21;female;18.8;1;high-school;45;1.72;15.21
+22;female;39.1;1;high-school;72;1.72;24.34
+23;male;33.6;0;bachelor's degree or higher;82;1.96;21.35
+24;female;22.3;1;high-school;60;1.65;22.04
+25;male;21.7;1;high-school;80;1.89;22.4
+26;male;22;1;high-school;100;1.77;31.92
+27;female;22.4;1;high-school;62;1.67;22.23
+28;female;21;1;high-school;58;1.6;22.66
+29;female;23;1;high-school;68;1.76;21.95
+30;female;20.5;1;high-school;75;1.75;24.49
+31;female;22;1;high-school;78;1.8;24.07
+32;female;20.3;1;high-school;63;1.78;19.88
+33;female;20.4;1;high-school;90;1.76;29.05
+34;male;20.4;1;high-school;78;1.75;25.47
+35;female;25.6;N/A;N/A;50;1.65;18.37
+36;male;40.5;1;high-school;80;1.82;24.15
+37;female;21.4;1;high-school;60;1.64;22.31
+38;male;29.1;1;bachelor's degree or higher;100;1.89;27.99
+39;male;24.9;1;high-school;76;1.76;24.54
+40;male;39.4;1;bachelor's degree or higher;70;1.8;21.6
+41;male;21.3;1;high-school;84;1.86;24.28
+42;male;35.6;1;bachelor's degree or higher;78;1.76;25.18
+43;male;23.8;1;bachelor's degree or higher;62;1.74;20.48
+44;female;24.3;1;bachelor's degree or higher;68;1.63;25.59
+45;male;24.6;1;bachelor's degree or higher;72;1.8;22.22
+46;female;28.9;1;high-school;60;1.67;21.51
+47;male;24.6;1;high-school;95;1.87;27.17
+48;male;23.4;1;bachelor's degree or higher;75;1.89;21
+49;male;23;1;bachelor's degree or higher;85;1.8;26.23
+50;female;39.9;1;high-school;108;1.71;36.93
+51;male;23;1;high-school;70;1.8;21.6
+52;female;34.9;1;high-school;56;1.66;20.32
+53;male;27.3;1;bachelor's degree or higher;82;1.9;22.71
+54;female;45.3;1;bachelor's degree or higher;60;1.62;22.86
+55;female;38.1;1;bachelor's degree or higher;66;1.63;24.84
+56;female;25.8;1;high-school;64;1.69;22.41
+57;female;39.8;1;high-school;55;1.68;19.49
+58;male;24.7;N/A;bachelor's degree or higher;70;1.85;20.45
+59;male;24.8;1;high-school;58;1.71;19.84
+60;female;27.4;0;bachelor's degree or higher;67;1.78;21.15
+61;female;23.3;1;high-school;75;1.75;24.49
+62;male;20.1;1;high-school;110;1.98;28.06
+63;male;40.3;1;high-school;80;1.8;24.69
+64;female;24.9;1;bachelor's degree or higher;65;1.8;20.06
+65;female;25.1;1;bachelor's degree or higher;73;1.68;25.86
+66;female;39.5;1;high-school;58;1.68;20.55
+67;male;20.6;1;high-school;85;1.8;26.23
+68;female;27;1;bachelor's degree or higher;85;1.7;29.41
+69;female;23.2;0;high-school;60;1.6;23.44
+70;female;23.2;1;high-school;63;1.71;21.55
+71;female;22.6;1;high-school;55;1.65;20.2
+72;male;22.5;1;high-school;88;1.83;26.28
+73;female;22.4;0;high-school;53;1.73;17.71
+74;female;22.5;1;high-school;52;1.56;21.37
+75;female;22.6;1;high-school;68;1.65;24.98
+76;male;28;1;bachelor's degree or higher;77;1.83;22.99
+77;female;22.9;1;high-school;55;1.66;19.96
+78;male;24.1;1;high-school;73;1.83;21.8
+79;female;24.8;1;high-school;51;1.68;18.07
+80;male;23.2;1;high-school;78;1.85;22.79
+81;female;23.7;1;high-school;60;1.71;20.52
+82;female;22.6;1;high-school;64;1.73;21.38
+83;female;23.1;1;high-school;65;1.75;21.22
+84;male;24.2;1;high-school;85;1.84;25.11
+85;male;23.5;1;high-school;76;1.75;24.82
+86;male;26.3;1;high-school;72;1.8;22.22
+87;female;25.3;1;high-school;64;1.68;22.68
+88;male;22.2;1;high-school;93;1.89;26.04
