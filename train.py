@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch_geometric
 from lightning import LightningModule, Trainer, seed_everything
 from lightning.pytorch.loggers import WandbLogger
+from torchmetrics import R2Score, PearsonCorrCoef
 
 # https://pytorch.org/docs/stable/notes/randomness.html
 # torch.manual_seed(42)
@@ -13,6 +14,7 @@ from lightning.pytorch.loggers import WandbLogger
 # https://lightning.ai/docs/pytorch/stable/common/trainer.html#reproducibility
 seed_everything(42, workers=True)
 
+BATCH_SIZE = 1
 
 class GCN(nn.Module):
     def __init__(self):
@@ -51,10 +53,13 @@ class Model(LightningModule):
         self.loss_fn = loss_fn
         self.optim = optim
 
+        self.val_correlation = PearsonCorrCoef()
+        self.val_r2 = R2Score()
+
     def training_step(self, batch, _):
         g, y_true = batch
         x, adj = g
-        y_hat = self.model(x, adj)
+        y_hat = self.model(x, adj).squeeze(1)
 
         loss = self.loss_fn(y_hat, y_true)
         self.log("Train MSE", loss)
@@ -64,12 +69,21 @@ class Model(LightningModule):
     def validation_step(self, batch):
         g, y_true = batch
         x, adj = g
-        y_hat = self.model(x, adj)
+        y_hat = self.model(x, adj).squeeze(1)
 
         loss = self.loss_fn(y_hat, y_true)
         self.log("Val MSE", loss)
         
+        self.val_correlation.update(y_hat, y_true)
+        self.val_r2.update(y_hat, y_true)
+        
         return loss
+    
+    def on_validation_epoch_end(self):
+        corr = self.val_correlation.compute()
+        r2 = self.val_r2.compute()
+
+        self.log_dict({"val_correlation": corr, "val_r2": r2})
     
     def configure_optimizers(self):
         return self.optim
@@ -115,7 +129,7 @@ def get_dataloaders(df, connectomes):
             ) 
             for i in range(split)
         ],
-        batch_size=1, shuffle=True, num_workers=8
+        batch_size=BATCH_SIZE, shuffle=True, num_workers=8
     )
 
     test_dataloader = torch.utils.data.DataLoader(
@@ -129,7 +143,7 @@ def get_dataloaders(df, connectomes):
             ) 
             for i in range(split, 673)
         ],
-        batch_size=1, shuffle=False, num_workers=8, drop_last=True
+        batch_size=BATCH_SIZE, shuffle=False, num_workers=8, drop_last=True
     )
 
     return train_dataloader, test_dataloader
@@ -147,7 +161,7 @@ def main():
     model = Model(gcn, loss_fn, optim)
     wandb_logger = WandbLogger(project="Onlab2")
     trainer = Trainer(
-        max_epochs=20, log_every_n_steps=50, logger=wandb_logger, deterministic=True
+        max_epochs=20, log_every_n_steps=100, logger=wandb_logger, deterministic=True
     )
     trainer.fit(model, train_dataloader, test_dataloader)
     
