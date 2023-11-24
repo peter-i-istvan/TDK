@@ -6,7 +6,9 @@ import torch.nn as nn
 import torch_geometric
 from lightning import LightningModule, Trainer, seed_everything
 from lightning.pytorch.loggers import WandbLogger
-from torchmetrics import R2Score, PearsonCorrCoef
+from torchmetrics import R2Score, PearsonCorrCoef, MeanAbsoluteError
+
+from models import BaselineGCN
 
 # https://pytorch.org/docs/stable/notes/randomness.html
 # torch.manual_seed(42)
@@ -16,15 +18,16 @@ seed_everything(42, workers=True)
 
 BATCH_SIZE = 1
 
+# currently not used, only a template
 class GCN(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = torch_geometric.nn.dense.DenseGraphConv(in_channels=87, out_channels=10)
-        # self.bn1 = torch.nn.BatchNorm1d(87)
+        self.bn1 = torch_geometric.nn.norm.BatchNorm(87)
         self.conv2 = torch_geometric.nn.dense.DenseGraphConv(in_channels=10, out_channels=10)
-        # self.bn2 = torch.nn.BatchNorm1d(87)
+        self.bn2 = torch_geometric.nn.norm.BatchNorm(87)
         self.conv3 = torch_geometric.nn.dense.DenseGraphConv(in_channels=10, out_channels=3)
-        # self.bn3 = torch.nn.BatchNorm1d(87)
+        self.bn3 = torch_geometric.nn.norm.BatchNorm(87)
         self.linear1 = nn.Linear(in_features=3*87, out_features=5)
         self.linear2 = nn.Linear(in_features=5, out_features=1)
 
@@ -33,16 +36,18 @@ class GCN(nn.Module):
         # omit batchnorm because it makes the training weak
         x = self.conv1(x, adj)
         x = torch.relu(x)
-        # x = self.bn1(x)
+        x = self.bn1(x)
         x = self.conv2(x, adj)
         x = torch.relu(x)
-        # x = self.bn2(x)
+        x = self.bn2(x)
         x = self.conv3(x, adj)
         x = torch.relu(x)
-        # x = self.bn3(x)
+        x = self.bn3(x)
         x = torch.reshape(x, (-1, 3*87))
+        x = torch.dropout(x, 0.1, self.training)
         x = self.linear1(x)
         x = torch.relu(x)
+        x = torch.dropout(x, 0.2, self.training)
         x = self.linear2(x)
         return x
     
@@ -55,6 +60,7 @@ class Model(LightningModule):
 
         self.val_correlation = PearsonCorrCoef()
         self.val_r2 = R2Score()
+        self.val_mae = MeanAbsoluteError()
 
     def training_step(self, batch, _):
         g, y_true = batch
@@ -76,14 +82,16 @@ class Model(LightningModule):
         
         self.val_correlation.update(y_hat, y_true)
         self.val_r2.update(y_hat, y_true)
+        self.val_mae.update(y_hat, y_true)
         
         return loss
     
     def on_validation_epoch_end(self):
         corr = self.val_correlation.compute()
         r2 = self.val_r2.compute()
+        mae = self.val_mae.compute()
 
-        self.log_dict({"val_correlation": corr, "val_r2": r2})
+        self.log_dict({"val_correlation": corr, "val_r2": r2, "val_mae": mae})
     
     def configure_optimizers(self):
         return self.optim
@@ -152,7 +160,7 @@ def main():
     df, connectomes = read_df_connectomes()
     train_dataloader, test_dataloader = get_dataloaders(df, connectomes)
     
-    gcn = GCN()
+    gcn = BaselineGCN()
     # this trainig works well with lower batch sizes
     # raise the batch size together with the learning rate
     optim = torch.optim.Adam(gcn.parameters(), lr=0.001)
@@ -161,7 +169,7 @@ def main():
     model = Model(gcn, loss_fn, optim)
     wandb_logger = WandbLogger(project="Onlab2")
     trainer = Trainer(
-        max_epochs=20, log_every_n_steps=100, logger=wandb_logger, deterministic=True
+        max_epochs=20, log_every_n_steps=50, logger=wandb_logger, deterministic=True
     )
     trainer.fit(model, train_dataloader, test_dataloader)
     
