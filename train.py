@@ -12,7 +12,7 @@ from models import RegressionModel, BaselineGCN
 
 
 def birth_age_regression():    
-    gcn = BaselineGCN(input_channels=10, hidden_conv_channels=20)
+    gcn = BaselineGCN(input_channels=10, hidden_conv_channels=20, out_conv_channels=5, hidden_mlp_features=10)
     print(gcn)
     optim = torch.optim.Adam(gcn.parameters(), lr=0.001)
     loss_fn = torch.nn.MSELoss()
