@@ -1,178 +1,57 @@
-import numpy as np
-import pandas as pd
-import os
 import torch
-import torch.nn as nn
-import torch_geometric
-from lightning import LightningModule, Trainer, seed_everything
+from lightning import Trainer, seed_everything
 from lightning.pytorch.loggers import WandbLogger
-from torchmetrics import R2Score, PearsonCorrCoef, MeanAbsoluteError
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+import matplotlib.pyplot as plt
 
-from models import BaselineGCN
-
-# https://pytorch.org/docs/stable/notes/randomness.html
-# torch.manual_seed(42)
-# use this instead:
 # https://lightning.ai/docs/pytorch/stable/common/trainer.html#reproducibility
 seed_everything(42, workers=True)
 
-BATCH_SIZE = 1
+from data import BirthAgeWithLaplacian
+from models import RegressionModel, BaselineGCN
 
-# currently not used, only a template
-class GCN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = torch_geometric.nn.dense.DenseGraphConv(in_channels=87, out_channels=10)
-        self.bn1 = torch_geometric.nn.norm.BatchNorm(87)
-        self.conv2 = torch_geometric.nn.dense.DenseGraphConv(in_channels=10, out_channels=10)
-        self.bn2 = torch_geometric.nn.norm.BatchNorm(87)
-        self.conv3 = torch_geometric.nn.dense.DenseGraphConv(in_channels=10, out_channels=3)
-        self.bn3 = torch_geometric.nn.norm.BatchNorm(87)
-        self.linear1 = nn.Linear(in_features=3*87, out_features=5)
-        self.linear2 = nn.Linear(in_features=5, out_features=1)
 
-    def forward(self, x, adj):
-        """x: (87, 87), adj: (87, 87)."""
-        # omit batchnorm because it makes the training weak
-        x = self.conv1(x, adj)
-        x = torch.relu(x)
-        x = self.bn1(x)
-        x = self.conv2(x, adj)
-        x = torch.relu(x)
-        x = self.bn2(x)
-        x = self.conv3(x, adj)
-        x = torch.relu(x)
-        x = self.bn3(x)
-        x = torch.reshape(x, (-1, 3*87))
-        x = torch.dropout(x, 0.1, self.training)
-        x = self.linear1(x)
-        x = torch.relu(x)
-        x = torch.dropout(x, 0.2, self.training)
-        x = self.linear2(x)
-        return x
-    
-class Model(LightningModule):
-    def __init__(self, model, loss_fn, optim) -> None:
-        super().__init__()
-        self.model = model
-        self.loss_fn = loss_fn
-        self.optim = optim
-
-        self.val_correlation = PearsonCorrCoef()
-        self.val_r2 = R2Score()
-        self.val_mae = MeanAbsoluteError()
-
-    def training_step(self, batch, _):
-        g, y_true = batch
-        x, adj = g
-        y_hat = self.model(x, adj).squeeze(1)
-
-        loss = self.loss_fn(y_hat, y_true)
-        self.log("Train MSE", loss)
-
-        return loss
-    
-    def validation_step(self, batch):
-        g, y_true = batch
-        x, adj = g
-        y_hat = self.model(x, adj).squeeze(1)
-
-        loss = self.loss_fn(y_hat, y_true)
-        self.log("Val MSE", loss)
-        
-        self.val_correlation.update(y_hat, y_true)
-        self.val_r2.update(y_hat, y_true)
-        self.val_mae.update(y_hat, y_true)
-        
-        return loss
-    
-    def on_validation_epoch_end(self):
-        corr = self.val_correlation.compute()
-        r2 = self.val_r2.compute()
-        mae = self.val_mae.compute()
-
-        self.log_dict({"val_correlation": corr, "val_r2": r2, "val_mae": mae})
-    
-    def configure_optimizers(self):
-        return self.optim
-
-def read_df_connectomes():
-    df = pd.read_csv("combined.tsv", sep="\t")
-    
-    # read metadata and connectomes
-    csv_filenames = os.listdir("connectomes-csv")
-
-    has_connectome = []
-    connectomes = []
-
-    for i, row in df.iterrows():
-        file_name = f"sub-{row['participant_id']}-ses-{row['session_id']}-nws.csv"
-        if file_name in csv_filenames:
-            has_connectome.append(i)
-            connectomes.append(
-                pd.read_csv(os.path.join("connectomes-csv", file_name), header=None).to_numpy()
-            )
-
-    df = df.loc[has_connectome,:].reset_index(drop=True)
-    connectomes = np.array(connectomes)
-
-    # outlier filtering
-    mask = df["birth_weight"] > 0
-    birth_weight_df = df[mask].copy().reset_index(drop=True)
-    birth_weight_connectomes = connectomes[mask,...]
-
-    return birth_weight_df, birth_weight_connectomes
-
-def get_dataloaders(df, connectomes):
-    split = int(673 * 0.7)
-
-    train_dataloader = torch.utils.data.DataLoader(
-        dataset=[
-            (
-                (
-                    torch.eye(87, dtype=torch.float32),
-                    torch.tensor(connectomes[i,...], dtype=torch.float32)
-                ),
-                torch.tensor(df["birth_weight"][i], dtype=torch.float32)
-            ) 
-            for i in range(split)
-        ],
-        batch_size=BATCH_SIZE, shuffle=True, num_workers=8
-    )
-
-    test_dataloader = torch.utils.data.DataLoader(
-        dataset=[
-            (
-                (
-                    torch.eye(87, dtype=torch.float32),
-                    torch.tensor(connectomes[i,...], dtype=torch.float32)
-                ),
-                torch.tensor(df["birth_weight"][i], dtype=torch.float32)
-            ) 
-            for i in range(split, 673)
-        ],
-        batch_size=BATCH_SIZE, shuffle=False, num_workers=8, drop_last=True
-    )
-
-    return train_dataloader, test_dataloader
-
-def main():
-    df, connectomes = read_df_connectomes()
-    train_dataloader, test_dataloader = get_dataloaders(df, connectomes)
-    
-    gcn = BaselineGCN()
-    # this trainig works well with lower batch sizes
-    # raise the batch size together with the learning rate
+def birth_age_regression():    
+    gcn = BaselineGCN(input_channels=10, hidden_conv_channels=20)
+    print(gcn)
     optim = torch.optim.Adam(gcn.parameters(), lr=0.001)
     loss_fn = torch.nn.MSELoss()
 
-    model = Model(gcn, loss_fn, optim)
-    wandb_logger = WandbLogger(project="Onlab2")
+    model = RegressionModel(gcn, loss_fn, optim)
+    datamodule = BirthAgeWithLaplacian(10, batch_size=32)
+    wandb_logger = WandbLogger(project="Onlab2-BA")
     trainer = Trainer(
-        max_epochs=20, log_every_n_steps=50, logger=wandb_logger, deterministic=True
+        max_epochs=300, 
+        log_every_n_steps=50, 
+        logger=wandb_logger, 
+        deterministic=True,
+        callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=20)]
     )
-    trainer.fit(model, train_dataloader, test_dataloader)
+
+    trainer.fit(model, datamodule=datamodule)
+
+    # Plot predictions on validation set
+    with torch.no_grad():
+        n_val = len(datamodule.val_index)
+        x = datamodule.node_pe.clone().detach().unsqueeze(0).repeat(n_val, 1, 1)
+        adj = torch.tensor(datamodule.connectomes[datamodule.val_index,...], dtype=torch.float32)
+        y_hat = gcn(x, adj).squeeze().numpy() + datamodule.mean_birth_age_on_train_set
+        y_true = datamodule.df["birth_age"].iloc[datamodule.val_index].to_numpy()
+        min_, max_ = min(y_hat.min(), y_true.min()), max(y_hat.max(), y_true.max())
+
+        plt.title("Prediction of birth age on the validation set")
+        plt.scatter(y=y_hat, x=y_true)
+        plt.plot([min_, max_], [min_, max_], c="r", ls="--", label="ideal prediction")
+        plt.xlabel("True value")
+        plt.ylabel("Predicted value")
+        plt.legend()
+        plt.savefig("prediction.png")
+        plt.clf()
+
     
+def sex_classification():
+    ...
 
 if __name__ == "__main__":
-    main()
+    birth_age_regression()
+    # sex_classification()
