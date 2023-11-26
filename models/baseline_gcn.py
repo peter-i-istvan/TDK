@@ -12,21 +12,25 @@ class BaselineGCN(nn.Module):
         self.hidden_mlp_features = hidden_mlp_features
 
         self.conv1 = torch_geometric.nn.dense.DenseGraphConv(in_channels=input_channels, out_channels=hidden_conv_channels)
+        self.prelu1 = torch.nn.PReLU()
         self.conv2 = torch_geometric.nn.dense.DenseGraphConv(in_channels=hidden_conv_channels, out_channels=hidden_conv_channels)
+        self.prelu2 = torch.nn.PReLU()
         self.conv3 = torch_geometric.nn.dense.DenseGraphConv(in_channels=hidden_conv_channels, out_channels=out_conv_channels)
-        self.linear1 = nn.Linear(in_features=(out_conv_channels*input_channels), out_features=hidden_mlp_features)
+        self.prelu3 = torch.nn.PReLU()
+        self.linear1 = nn.Linear(in_features=(out_conv_channels*87), out_features=hidden_mlp_features)
+        self.prelu4 = torch.nn.PReLU()
         self.linear2 = nn.Linear(in_features=hidden_mlp_features, out_features=1)
 
     def forward(self, x, adj):
         """x: (87, 87), adj: (87, 87)."""
         x = self.conv1(x, adj)
-        x = torch.relu(x)
+        x = self.prelu1(x)
         x = self.conv2(x, adj)
-        x = torch.relu(x)
+        x = self.prelu2(x)
         x = self.conv3(x, adj)
-        x = torch.relu(x)
-        x = torch.reshape(x, (-1, (self.out_conv_channels*self.input_channels)))
+        x = self.prelu3(x)
+        x = torch.reshape(x, (-1, (self.out_conv_channels*87)))
         x = self.linear1(x)
-        x = torch.relu(x)
+        x = self.prelu4(x)
         x = self.linear2(x)
         return x
