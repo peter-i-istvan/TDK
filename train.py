@@ -45,7 +45,7 @@ def birth_age_regression():
         plt.xlabel("True value")
         plt.ylabel("Predicted value")
         plt.legend()
-        plt.savefig("prediction.png")
+        plt.savefig("birth_age_predictions.png")
         plt.clf()
 
     

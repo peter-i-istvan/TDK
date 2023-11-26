@@ -46,7 +46,7 @@ class BirthAgeWithLaplacian(LightningDataModule):
         sns.kdeplot(self.df["birth_age"].iloc[self.train_index])
         sns.kdeplot(self.df["birth_age"].iloc[self.val_index])
         plt.title("Distribution of birth age accross train (blue) and validation (orange) sets")
-        plt.savefig("split_plot.png")
+        plt.savefig("birth_age_split_plot.png")
         plt.clf()
 
     def _get_laplacian_pe(self, n_laplacian, n_nodes):
