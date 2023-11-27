@@ -3,6 +3,7 @@ from lightning import LightningModule
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from torchmetrics import R2Score, PearsonCorrCoef, MeanAbsoluteError
 
+
 class RegressionModel(LightningModule):
     def __init__(self, model, loss_fn, optim) -> None:
         super().__init__()
@@ -14,6 +15,10 @@ class RegressionModel(LightningModule):
         self.val_r2 = R2Score()
         self.val_mae = MeanAbsoluteError()
 
+        self.test_correlation = PearsonCorrCoef()
+        self.test_r2 = R2Score()
+        self.test_mae = MeanAbsoluteError()
+
     def training_step(self, batch, _):
         g, y_true = batch
         x, adj = g
@@ -23,7 +28,7 @@ class RegressionModel(LightningModule):
         self.log("train_loss", loss)
 
         return loss
-    
+
     def validation_step(self, batch):
         g, y_true = batch
         x, adj = g
@@ -31,19 +36,40 @@ class RegressionModel(LightningModule):
 
         loss = self.loss_fn(y_hat, y_true)
         self.log("val_loss", loss)
-        
+
         self.val_correlation.update(y_hat, y_true)
         self.val_r2.update(y_hat, y_true)
         self.val_mae.update(y_hat, y_true)
-        
+
         return loss
-    
+
+    def test_step(self, batch):
+        g, y_true = batch
+        x, adj = g
+        y_hat = self.model(x, adj).squeeze(1)
+
+        loss = self.loss_fn(y_hat, y_true)
+        self.log("test_loss", loss)
+
+        self.test_correlation.update(y_hat, y_true)
+        self.test_r2.update(y_hat, y_true)
+        self.test_mae.update(y_hat, y_true)
+
+        return loss
+
     def on_validation_epoch_end(self):
         corr = self.val_correlation.compute()
         r2 = self.val_r2.compute()
         mae = self.val_mae.compute()
 
         self.log_dict({"val_correlation": corr, "val_r2": r2, "val_mae": mae})
-    
+
+    def on_test_epoch_end(self):
+        corr = self.test_correlation.compute()
+        r2 = self.test_r2.compute()
+        mae = self.test_mae.compute()
+
+        self.log_dict({"test_correlation": corr, "test_r2": r2, "test_mae": mae})
+
     def configure_optimizers(self):
         return self.optim
